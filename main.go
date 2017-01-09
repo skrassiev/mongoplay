@@ -22,6 +22,7 @@ var (
 	requestPerSecond       = 10
 	clients          int32 = 0
 	sleepTm                = 0
+	mongohost              = "10.0.0.95"
 )
 
 func main() {
@@ -34,12 +35,16 @@ func main() {
 		sleepTm, _ = strconv.Atoi(os.Args[2])
 	}
 
+	if len(os.Getenv("MONGO_HOST")) > 0 {
+		mongohost = os.Getenv("MONGO_HOST")
+	}
+
 	fmt.Println("will send", requestPerSecond, "requests per second")
 
 	reader := bufio.NewReader(os.Stdin)
 
 	// session, err := mgo.Dial("localhost")
-	session, err := mgo.Dial("10.0.0.95:27017")
+	session, err := mgo.Dial(mongohost + ":27017")
 	if err != nil {
 		panic(err)
 	}
@@ -76,7 +81,7 @@ func main() {
 	reader.ReadLine()
 
 	// mgo.SetDebug(true)
-	mgo.SetLogger(log.New(os.Stderr, "ff", 0))
+	// mgo.SetLogger(log.New(os.Stderr, "ff", 0))
 
 	loop := 0
 	for {
@@ -95,13 +100,15 @@ func main() {
 				ns := sess.Copy()
 
 				result := Person{}
-				err = ns.DB("hydra").C("users").Find(bson.M{"name": "Ale"}).One(&result)
+				c = ns.DB("hydra").C("users")
+				tm_b := time.Now()
+				err = c.Find(bson.M{"name": "Ale"}).One(&result)
 				if err != nil {
 					log.Println("ERROR on conn", i)
 					log.Fatal(err)
 				}
 
-				fmt.Println("Phone:", result.Phone)
+				fmt.Println("Phone:", result.Phone, "took", time.Since(tm_b).Seconds(), "seconds")
 
 				fmt.Println("-ID", atomic.AddInt32(&clients, -1))
 
