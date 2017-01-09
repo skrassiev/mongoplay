@@ -1,0 +1,16 @@
+version: '2.1'
+
+services:
+
+  mongo:
+    image: mongolocal:v01
+    ports:
+      - "27017:27017"
+
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 2048
+
+    volumes:
+      - ~/code/mongo/db:/data/db
