@@ -79,7 +79,7 @@ func main() {
 	}
 
 	fmt.Println("Phone:", result.Phone)
-	fmt.Println("press a key to contunue into the loop ...")
+	fmt.Println("press a key to continue into the loop ...")
 	reader.ReadLine()
 
 	// mgo.SetDebug(true)
@@ -97,6 +97,10 @@ func main() {
 
 		tmLoopBegin := time.Now()
 
+		if loop == 2 && requestPerSecond > 1000 {
+			// add more to time to establish sockets on a first run
+			time.Sleep(time.Duration(requestPerSecond*2/1000) * time.Second)
+		}
 		if clients != 0 {
 			log.Fatalln("id fell behind", clients)
 		}
