@@ -10,7 +10,7 @@ import (
 
 /*
  * db.users.save( {username:"mkyong"} )
- * db.createUser( { "user" : "mdbhydra", "pwd" : "hydra", "roles" : [ { role: "readWrite", db: "hydra" } ] } )
+ * db.createUser( { "user" : "testhydra", "pwd" : "hydra", "roles" : [ { role: "readWrite", db: "hydra" } ] } )
  */
 
 var nfiles uint

@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/montanaflynn/stats"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -23,6 +24,8 @@ var (
 	clients          int32 = 0
 	sleepTm                = 0
 	mongohost              = "10.0.0.95"
+	selected         string
+	everSelected     bool
 )
 
 func main() {
@@ -83,19 +86,30 @@ func main() {
 	// mgo.SetDebug(true)
 	// mgo.SetLogger(log.New(os.Stderr, "ff", 0))
 
+	statsb := make(chan stats.Float64Data)
+	go printStats(statsb)
+	sb := make(stats.Float64Data, requestPerSecond)
+
 	loop := 0
 	for {
 		fmt.Println("sleeping in a loop", loop)
 		time.Sleep(1000 * time.Millisecond)
 		loop++
 
+		tmLoopBegin := time.Now()
+
+		if clients != 0 {
+			log.Fatalln("id fell behind", clients)
+		}
+
 		for i := 0; i < requestPerSecond; i++ {
 			if sleepTm > 0 {
 				time.Sleep(time.Duration(sleepTm) * time.Microsecond)
 			}
-			go func(sess *mgo.Session) {
+			go func(sess *mgo.Session, i int) {
 
-				fmt.Println("+ID", atomic.AddInt32(&clients, 1))
+				id := atomic.AddInt32(&clients, 1)
+				// fmt.Println("+ID", id)
 
 				ns := sess.Copy()
 
@@ -108,15 +122,29 @@ func main() {
 					log.Fatal(err)
 				}
 
-				fmt.Println("Phone:", result.Phone, "took", time.Since(tm_b).Seconds(), "seconds")
+				sb[i] = time.Since(tm_b).Seconds()
+				if !everSelected {
+					selected = result.Phone
+					fmt.Println("selected", selected)
+					everSelected = true
+				} else if selected != result.Phone {
+					log.Fatalln("go unexpected select value", result.Phone)
+				}
+				// fmt.Println("Phone:", result.Phone, "took", sb[i], "seconds")
 
-				fmt.Println("-ID", atomic.AddInt32(&clients, -1))
+				id = atomic.AddInt32(&clients, -1)
+				// fmt.Println("-ID", id)
+				if id == 0 {
+					tmLoopTotal := time.Since(tmLoopBegin).Seconds()
+					fmt.Printf("took %.6f seconds per %d, avg %.6f seconds per request\n", tmLoopTotal, requestPerSecond, tmLoopTotal/float64(requestPerSecond))
+					statsb <- sb
+				}
 
 				ns.Close()
-			}(session)
+			}(session, i)
 		}
 
-		fmt.Println("press a key before the next loop...")
+		// fmt.Println("press a key before the next loop...")
 		// reader.ReadLine()
 
 	}
@@ -124,4 +152,17 @@ func main() {
 	fmt.Println("press a key to exit...")
 	reader.ReadLine()
 
+}
+
+func printStats(statsb <-chan stats.Float64Data) {
+
+	for {
+		select {
+		case b := <-statsb:
+			min, _ := stats.Min(b)
+			mean, _ := stats.Mean(b)
+			max, _ := stats.Max(b)
+			fmt.Println("min/mean/max", min, mean, max)
+		}
+	}
 }
