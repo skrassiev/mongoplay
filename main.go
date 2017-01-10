@@ -136,7 +136,7 @@ func main() {
 				// fmt.Println("-ID", id)
 				if id == 0 {
 					tmLoopTotal := time.Since(tmLoopBegin).Seconds()
-					fmt.Printf("took %.6f seconds per %d, avg %.6f seconds per request\n", tmLoopTotal, requestPerSecond, tmLoopTotal/float64(requestPerSecond))
+					fmt.Printf("took %.7f seconds per %d, avg %.7f seconds per request\n", tmLoopTotal, requestPerSecond, tmLoopTotal/float64(requestPerSecond))
 					statsb <- sb
 				}
 
@@ -162,7 +162,7 @@ func printStats(statsb <-chan stats.Float64Data) {
 			min, _ := stats.Min(b)
 			mean, _ := stats.Mean(b)
 			max, _ := stats.Max(b)
-			fmt.Println("min/mean/max", min, mean, max)
+			fmt.Printf("min/mean/max %.7f/%.7f/%.7f\n", min, mean, max)
 		}
 	}
 }
