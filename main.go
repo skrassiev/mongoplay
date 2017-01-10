@@ -46,7 +46,6 @@ func main() {
 
 	reader := bufio.NewReader(os.Stdin)
 
-	// session, err := mgo.Dial("localhost")
 	session, err := mgo.Dial(mongohost + ":27017")
 	if err != nil {
 		panic(err)
@@ -114,7 +113,7 @@ func main() {
 				ns := sess.Copy()
 
 				result := Person{}
-				c = ns.DB("hydra").C("users")
+				c := ns.DB("hydra").C("users")
 				tm_b := time.Now()
 				err = c.Find(bson.M{"name": "Ale"}).One(&result)
 				if err != nil {
